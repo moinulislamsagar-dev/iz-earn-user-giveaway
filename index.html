@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Create Giveaway</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--tg-theme-bg-color, #0f172a);
+      color: var(--tg-theme-text-color, #e2e8f0);
+      min-height: 100vh;
+      padding: 16px;
+      padding-bottom: 110px;
+    }
+    h1 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+    .sub {
+      text-align: center;
+      font-size: 0.85rem;
+      opacity: 0.75;
+      margin-bottom: 16px;
+    }
+    .card {
+      background: var(--tg-theme-secondary-bg-color, #1e293b);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    label {
+      display: block;
+      font-size: 0.84rem;
+      opacity: 0.9;
+      margin-bottom: 6px;
+      font-weight: 700;
+    }
+    .type-row { display: flex; gap: 10px; }
+    .type-btn {
+      flex: 1;
+      padding: 12px 8px;
+      border-radius: 12px;
+      border: 2px solid rgba(255,255,255,0.12);
+      background: transparent;
+      color: inherit;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .type-btn.active {
+      border-color: #38bdf8;
+      background: rgba(56, 189, 248, 0.15);
+    }
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(0,0,0,0.25);
+      color: inherit;
+      font-size: 1rem;
+      outline: none;
+    }
+    input:focus { border-color: #38bdf8; }
+    input.invalid {
+      border-color: #f87171 !important;
+      background: rgba(248, 113, 113, 0.08);
+    }
+    .field { margin-bottom: 14px; }
+    .field:last-child { margin-bottom: 0; }
+    .hint {
+      font-size: 0.74rem;
+      opacity: 0.7;
+      margin-top: 4px;
+      line-height: 1.35;
+    }
+    .field-error {
+      display: none;
+      font-size: 0.78rem;
+      color: #f87171;
+      margin-top: 5px;
+      line-height: 1.35;
+      font-weight: 600;
+    }
+    .field-error.show { display: block; }
+    .banner {
+      display: none;
+      background: rgba(248, 113, 113, 0.14);
+      border: 1px solid rgba(248, 113, 113, 0.35);
+      color: #fecaca;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      font-size: 0.9rem;
+      line-height: 1.45;
+      white-space: pre-line;
+    }
+    .banner.show { display: block; }
+    .pool-box {
+      text-align: center;
+      padding: 12px;
+      border-radius: 12px;
+      background: rgba(74, 222, 128, 0.08);
+      border: 1px solid rgba(74, 222, 128, 0.2);
+      margin-bottom: 14px;
+      font-size: 0.95rem;
+    }
+    .pool-box strong { color: #4ade80; font-size: 1.1rem; }
+    .pool-box.warn {
+      background: rgba(248, 113, 113, 0.08);
+      border-color: rgba(248, 113, 113, 0.25);
+    }
+    .pool-box.warn strong { color: #f87171; }
+    #createBtn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 14px;
+      background: #22c55e;
+      color: #052e16;
+      font-size: 1.05rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(34, 197, 94, 0.35);
+    }
+    #createBtn:active { transform: scale(0.98); }
+    #createBtn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎁 Create Giveaway</h1>
+  <div class="sub">Fill all fields with valid values</div>
+
+  <div class="banner" id="banner"></div>
+
+  <div class="card">
+    <div class="field">
+      <label>1. Giveaway Type</label>
+      <div class="type-row">
+        <button type="button" class="type-btn active" data-type="main" id="btnMain">⚡ Main Balance</button>
+        <button type="button" class="type-btn" data-type="xrocket" id="btnXr">🚀 xRocket</button>
+      </div>
+      <div class="hint" id="typeHint">Main prizes pay in ⚡ · xRocket pays USDT to winners</div>
+    </div>
+
+    <div class="field">
+      <label>2. Winners</label>
+      <input id="winners" type="number" inputmode="numeric" min="1" step="1" placeholder="Enter winners (e.g. 10)" />
+      <div class="hint">Whole number, at least 1</div>
+      <div class="field-error" id="err_winners"></div>
+    </div>
+
+    <div class="field">
+      <label>3. Participants</label>
+      <input id="participants" type="number" inputmode="numeric" min="1" step="1" placeholder="Enter max participants (e.g. 100)" />
+      <div class="hint">Must be ≥ winners. Giveaway ends only by time, not when full.</div>
+      <div class="field-error" id="err_participants"></div>
+    </div>
+
+    <div class="field">
+      <label>4. Per Winner Gets ($)</label>
+      <input id="perWinner" type="number" inputmode="decimal" min="0" step="0.001" placeholder="Enter amount in USD" />
+      <div class="hint" id="perHint">Main ≥ 0.005$ · xRocket ≥ 0.01$</div>
+      <div class="field-error" id="err_perWinner"></div>
+    </div>
+
+    <div class="field">
+      <label>5. Duration (Hours)</label>
+      <input id="hours" type="number" inputmode="decimal" min="0.25" max="48" step="0.25" placeholder="e.g. 6 or 0.25" />
+      <div class="hint">Minimum 0.25 hour · Maximum 48 hours</div>
+      <div class="field-error" id="err_hours"></div>
+    </div>
+
+    <div class="field">
+      <label>6. Target Channel</label>
+      <input id="channel" type="text" placeholder="@channel or https://t.me/channel" autocomplete="off" />
+      <div class="hint">Channel where giveaway will be posted</div>
+      <div class="field-error" id="err_channel"></div>
+    </div>
+  </div>
+
+  <div class="pool-box" id="poolBox">
+    Prize pool: <strong id="poolText">0.00$</strong>
+    <div class="hint" id="poolHint" style="margin-top:6px">Must be at least 0.05$</div>
+  </div>
+
+  <button type="button" id="createBtn">✅ Create Giveaway</button>
+
+  <script>
+(function () {
+  var tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
+  if (tg) {
+    try { tg.ready(); } catch (e) {}
+    try { tg.expand(); } catch (e) {}
+  }
+
+  var selectedType = "main";
+  var btnMain = document.getElementById("btnMain");
+  var btnXr = document.getElementById("btnXr");
+  var banner = document.getElementById("banner");
+  var poolText = document.getElementById("poolText");
+  var poolBox = document.getElementById("poolBox");
+  var poolHint = document.getElementById("poolHint");
+  var perHint = document.getElementById("perHint");
+  var createBtn = document.getElementById("createBtn");
+
+  var fields = ["winners", "participants", "perWinner", "hours", "channel"];
+
+  function setType(t) {
+    selectedType = t;
+    btnMain.classList.toggle("active", t === "main");
+    btnXr.classList.toggle("active", t === "xrocket");
+    if (t === "xrocket") {
+      perHint.textContent = "xRocket: each winner must get at least 0.01$";
+    } else {
+      perHint.textContent = "Main Balance: each winner must get at least 0.005$";
+    }
+    // re-validate per winner hint live if value present
+    clearFieldError("perWinner");
+    updatePool();
+  }
+  btnMain.addEventListener("click", function () { setType("main"); });
+  btnXr.addEventListener("click", function () { setType("xrocket"); });
+
+  function val(id) {
+    return String(document.getElementById(id).value || "").trim();
+  }
+  function num(id) {
+    var v = parseFloat(val(id).replace(",", "."));
+    return isNaN(v) ? NaN : v;
+  }
+
+  function clearFieldError(id) {
+    var input = document.getElementById(id);
+    var err = document.getElementById("err_" + id);
+    if (input) input.classList.remove("invalid");
+    if (err) {
+      err.textContent = "";
+      err.classList.remove("show");
+    }
+  }
+
+  function setFieldError(id, msg) {
+    var input = document.getElementById(id);
+    var err = document.getElementById("err_" + id);
+    if (input) input.classList.add("invalid");
+    if (err) {
+      err.textContent = msg;
+      err.classList.add("show");
+    }
+  }
+
+  function clearAllErrors() {
+    fields.forEach(clearFieldError);
+    banner.textContent = "";
+    banner.classList.remove("show");
+  }
+
+  function normalizeChannel(raw) {
+    var s = String(raw || "").trim().replace(/\s+/g, "");
+    if (!s) return "";
+    if (s.indexOf("https://t.me/") === 0) s = s.replace("https://t.me/", "");
+    else if (s.indexOf("http://t.me/") === 0) s = s.replace("http://t.me/", "");
+    else if (s.indexOf("t.me/") === 0) s = s.replace("t.me/", "");
+    s = s.split("/")[0].split("?")[0].replace(/^@/, "");
+    if (!s) return "";
+    // basic username check
+    if (!/^[A-Za-z0-9_]{4,}$/.test(s) && !/^-?\d+$/.test(s)) {
+      return "";
+    }
+    return "@" + s.replace(/^@/, "");
+  }
+
+  function updatePool() {
+    var w = num("winners");
+    var p = num("perWinner");
+    var pool = (!isNaN(w) && !isNaN(p) && w > 0 && p > 0) ? (w * p) : 0;
+    poolText.textContent = pool.toFixed(4).replace(/\.?0+$/, "") + "$";
+    if (pool > 0 && pool < 0.05) {
+      poolBox.classList.add("warn");
+      poolHint.textContent = "Prize pool is too low — must be at least 0.05$";
+    } else if (pool >= 0.05) {
+      poolBox.classList.remove("warn");
+      poolHint.textContent = "OK — minimum pool 0.05$ met";
+    } else {
+      poolBox.classList.remove("warn");
+      poolHint.textContent = "Must be at least 0.05$";
+    }
+  }
+
+  function validate() {
+    clearAllErrors();
+    var ok = true;
+    var list = [];
+
+    var winners = num("winners");
+    var participants = num("participants");
+    var per = num("perWinner");
+    var hours = num("hours");
+    var channelRaw = val("channel");
+    var channel = normalizeChannel(channelRaw);
+
+    // Winners
+    if (val("winners") === "") {
+      setFieldError("winners", "Please enter number of winners");
+      list.push("Winners: enter a number");
+      ok = false;
+    } else if (!winners || winners < 1 || Math.floor(winners) !== winners) {
+      setFieldError("winners", "Enter a whole number ≥ 1 (example: 10)");
+      list.push("Winners: use whole number ≥ 1");
+      ok = false;
+    }
+
+    // Participants
+    if (val("participants") === "") {
+      setFieldError("participants", "Please enter participants");
+      list.push("Participants: enter a number");
+      ok = false;
+    } else if (!participants || participants < 1 || Math.floor(participants) !== participants) {
+      setFieldError("participants", "Enter a whole number ≥ 1 (example: 100)");
+      list.push("Participants: use whole number ≥ 1");
+      ok = false;
+    } else if (!isNaN(winners) && participants < winners) {
+      setFieldError("participants", "Participants must be ≥ winners (" + Math.floor(winners) + ")");
+      list.push("Participants must be ≥ winners");
+      ok = false;
+    }
+
+    // Per winner
+    var minPer = selectedType === "xrocket" ? 0.01 : 0.005;
+    if (val("perWinner") === "") {
+      setFieldError("perWinner", "Please enter per winner amount in $");
+      list.push("Per winner: enter amount");
+      ok = false;
+    } else if (!per || per < minPer) {
+      setFieldError(
+        "perWinner",
+        selectedType === "xrocket"
+          ? "Invalid value. xRocket minimum is 0.01$ per winner"
+          : "Invalid value. Main Balance minimum is 0.005$ per winner"
+      );
+      list.push("Per winner: minimum " + minPer + "$ for this type");
+      ok = false;
+    }
+
+    // Pool
+    if (ok && winners && per && winners * per < 0.05) {
+      setFieldError("perWinner", "Prize pool too small. Increase per winner or winners so pool ≥ 0.05$");
+      list.push("Prize pool (winners × per) must be ≥ 0.05$");
+      ok = false;
+      poolBox.classList.add("warn");
+    }
+
+    // Hours
+    if (val("hours") === "") {
+      setFieldError("hours", "Please enter duration in hours");
+      list.push("Duration: enter hours");
+      ok = false;
+    } else if (!hours || hours < 0.25) {
+      setFieldError("hours", "Invalid value. Minimum duration is 0.25 hours");
+      list.push("Duration: min 0.25 hours");
+      ok = false;
+    } else if (hours > 48) {
+      setFieldError("hours", "Invalid value. Maximum duration is 48 hours");
+      list.push("Duration: max 48 hours");
+      ok = false;
+    }
+
+    // Channel
+    if (channelRaw === "") {
+      setFieldError("channel", "Please enter target channel (@name or t.me link)");
+      list.push("Channel: required");
+      ok = false;
+    } else if (!channel) {
+      setFieldError("channel", "Invalid channel. Use @channelname or https://t.me/channelname");
+      list.push("Channel: invalid format");
+      ok = false;
+    }
+
+    if (!ok) {
+      banner.textContent =
+        "❌ Some values are invalid.\nPlease correct the red fields and try again.\n\n" +
+        list.map(function (x) { return "• " + x; }).join("\n");
+      banner.classList.add("show");
+      try {
+        if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("error");
+      } catch (e) {}
+      // scroll to first error
+      var firstInvalid = document.querySelector("input.invalid");
+      if (firstInvalid) {
+        try { firstInvalid.focus(); } catch (e) {}
+        try { firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {}
+      }
+      return null;
+    }
+
+    return {
+      type: selectedType,
+      winners: Math.floor(winners),
+      participants: Math.floor(participants),
+      per: Math.round(per * 10000) / 10000,
+      hours: Math.round(hours * 1000) / 1000,
+      channel: channel,
+      pool: Math.round(winners * per * 10000) / 10000
+    };
+  }
+
+  function sendToBot(payload) {
+    if (!tg || typeof tg.sendData !== "function") {
+      banner.textContent = "❌ Open this page using the bot button inside Telegram.";
+      banner.classList.add("show");
+      return false;
+    }
+    try {
+      tg.sendData(payload);
+      return true;
+    } catch (e) {
+      banner.textContent = "❌ Could not send data. Close and open again from the bot.";
+      banner.classList.add("show");
+      return false;
+    }
+  }
+
+  createBtn.addEventListener("click", function () {
+    var data = validate();
+    if (!data) return;
+
+    var payload = [
+      "ugw_create",
+      data.type,
+      data.winners,
+      data.participants,
+      data.per,
+      data.hours,
+      data.channel,
+      data.pool
+    ].join("|");
+
+    createBtn.disabled = true;
+    createBtn.textContent = "Sending...";
+    var ok = sendToBot(payload);
+    if (!ok) {
+      createBtn.disabled = false;
+      createBtn.textContent = "✅ Create Giveaway";
+    }
+  });
+
+  // Live clear error when user edits a field
+  fields.forEach(function (id) {
+    var el = document.getElementById(id);
+    el.addEventListener("input", function () {
+      clearFieldError(id);
+      banner.classList.remove("show");
+      updatePool();
+    });
+  });
+
+  setType("main");
+  updatePool();
+})();
+  </script>
+</body>
+</html>
